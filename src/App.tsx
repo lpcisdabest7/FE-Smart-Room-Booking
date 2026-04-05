@@ -190,6 +190,27 @@ export default function App() {
     setModal(null);
   }, [workspace.activeTab]);
 
+  useEffect(() => {
+    if (modal?.type !== 'booking') {
+      return;
+    }
+
+    const latest = workspace.bookings.find((booking) => booking.id === modal.booking.id);
+    if (!latest) {
+      return;
+    }
+
+    const changed =
+      latest.status !== modal.booking.status ||
+      latest.updatedAt !== modal.booking.updatedAt ||
+      latest.startAt !== modal.booking.startAt ||
+      latest.endAt !== modal.booking.endAt;
+
+    if (changed) {
+      setModal({ type: 'booking', booking: latest });
+    }
+  }, [modal, workspace.bookings]);
+
   if (!isAuthenticated) {
     return <LoginForm onLogin={login} />;
   }
