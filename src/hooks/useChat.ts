@@ -1,6 +1,6 @@
 ﻿import { useCallback, useEffect, useState } from 'react';
 import { sendMessage as apiSendMessage } from '../services/api';
-import type { ChatMessage, ChatRequestContext, RoomProfile } from '../types';
+import type { BookingRecord, ChatMessage, ChatRequestContext, RoomProfile } from '../types';
 
 const DISPLAY_TIMEZONE = 'Asia/Bangkok';
 
@@ -95,6 +95,10 @@ function mapResponse(response: any): ChatMessage {
   }
 
   if (response.type === 'history_summary') {
+    const visibleBookings = (Array.isArray(response.bookings) ? (response.bookings as BookingRecord[]) : []).filter(
+      (booking: BookingRecord) => booking.status !== 'cancelled'
+    );
+
     return {
       id: generateId(),
       role: 'assistant',
@@ -102,7 +106,7 @@ function mapResponse(response: any): ChatMessage {
       type: 'history_summary',
       data: {
         panelHint: response.panelHint ?? 'none',
-        bookings: Array.isArray(response.bookings) ? response.bookings : [],
+        bookings: visibleBookings,
       },
       timestamp: new Date(),
     };
