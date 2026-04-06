@@ -57,6 +57,37 @@ function saveMessages(key: string, messages: ChatMessage[]) {
 }
 
 function mapResponse(response: any): ChatMessage {
+  if (response.type === 'booking_confirmed') {
+    const payload = response.booking ?? {};
+    const roomName =
+      payload.roomName ??
+      payload.room?.name ??
+      (typeof payload.room === 'string' ? payload.room : undefined) ??
+      'Phòng chưa xác định';
+    const start = payload.startAt ?? payload.start ?? new Date().toISOString();
+    const end = payload.endAt ?? payload.end ?? start;
+    const summary = payload.title ?? payload.summary ?? `Họp tại phòng ${roomName}`;
+
+    return {
+      id: generateId(),
+      role: 'assistant',
+      content: response.message ?? 'Đặt phòng thành công.',
+      type: 'booking_success',
+      data: {
+        panelHint: response.panelHint ?? 'none',
+        booking: {
+          calendarLink: payload.calendarLink ?? '',
+          summary,
+          start,
+          end,
+          room: roomName,
+          capacity: payload.room?.capacity ?? payload.capacity,
+        },
+      },
+      timestamp: new Date(),
+    };
+  }
+
   if (response.type === 'rooms_available') {
     const start = `${response.searchParams.date}T${response.searchParams.startTime}:00+07:00`;
     const end = new Date(new Date(start).getTime() + response.searchParams.duration * 60 * 1000).toISOString();
@@ -75,6 +106,36 @@ function mapResponse(response: any): ChatMessage {
           panelHint: response.panelHint ?? 'none',
           status: 'available',
         })),
+      },
+      timestamp: new Date(),
+    };
+  }
+
+  if (response.type === 'no_availability') {
+    const alternatives = (Array.isArray(response.alternatives) ? response.alternatives : [])
+      .flatMap((slot: any) => {
+        const slotStart = typeof slot?.startTime === 'string' ? slot.startTime : '';
+        const slotEnd = typeof slot?.endTime === 'string' ? slot.endTime : '';
+        return (Array.isArray(slot?.rooms) ? slot.rooms : []).map((room: RoomProfile) => ({
+          room: normalizeRoom(room),
+          available: true,
+          timeSlot: { start: slotStart, end: slotEnd },
+          roomId: room.id,
+          panelHint: response.panelHint ?? 'none',
+          status: 'available',
+        }));
+      })
+      .filter((item: { timeSlot: { start: string; end: string } }) => Boolean(item.timeSlot.start) && Boolean(item.timeSlot.end))
+      .slice(0, 3);
+
+    return {
+      id: generateId(),
+      role: 'assistant',
+      content: response.message ?? '',
+      type: 'no_rooms',
+      data: {
+        panelHint: response.panelHint ?? 'none',
+        alternativeSlots: alternatives,
       },
       timestamp: new Date(),
     };

@@ -184,12 +184,17 @@ export interface ListRoomsResponse extends ChatResponseBase {
 
 export interface BookingConfirmedResponse extends ChatResponseBase {
   type: 'booking_confirmed';
-  booking: {
-    room: RoomProfile;
-    date: string;
-    startTime: string;
-    duration: number;
-    calendarLink: string;
+  booking: Partial<BookingRecord> & {
+    room?: RoomProfile | string;
+    roomName?: string;
+    title?: string;
+    summary?: string;
+    start?: string;
+    end?: string;
+    startAt?: string;
+    endAt?: string;
+    calendarLink?: string | null;
+    capacity?: number;
   };
 }
 

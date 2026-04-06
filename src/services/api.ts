@@ -262,7 +262,18 @@ export async function createBooking(
   duration: number,
   title: string
 ): Promise<BookingResponse> {
-  const payload = { roomId, date, startTime, duration, title };
+  const startAt = buildDateTime(date, startTime);
+  const endAt = addMinutes(startAt, duration);
+  const payload = {
+    roomId,
+    title,
+    startAt,
+    endAt,
+    // Keep these fields for backward-compatible servers.
+    date,
+    startTime,
+    duration,
+  };
 
   try {
     const response = await request<{
@@ -291,7 +302,6 @@ export async function createBooking(
       room?: RoomProfile;
     }>('post', '/api/book', payload);
 
-    const startDateTime = buildDateTime(date, startTime);
     const booking = normalizeBookingRecord({
       id: `legacy-${roomId}-${date}-${startTime}`,
       roomId,
@@ -304,7 +314,8 @@ export async function createBooking(
       calendarLink: legacy.bookingLink,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
-      endAt: addMinutes(startDateTime, duration),
+      startAt,
+      endAt,
       room: legacy.room,
       source: 'manual',
     });

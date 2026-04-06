@@ -421,6 +421,53 @@ export default function App() {
           </div>
         ) : null}
 
+        {message.type === 'no_rooms' && Array.isArray(message.data?.alternativeSlots) ? (
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            {message.data?.alternativeSlots
+              .filter((suggestion) => Boolean(suggestion?.room?.id) && Boolean(suggestion?.timeSlot?.start) && Boolean(suggestion?.timeSlot?.end))
+              .map((suggestion) => (
+                <article
+                  key={`alternative-${suggestion.room.id}-${suggestion.timeSlot.start}`}
+                  className="rounded-[28px] border border-amber-300/30 bg-amber-500/10 p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <h4 className="text-base font-semibold text-white">{suggestion.room.name}</h4>
+                      <p className="text-xs text-slate-300">{roomCardMeta(suggestion.room)}</p>
+                    </div>
+                    <span className="rounded-full border border-amber-300/40 bg-amber-400/15 px-3 py-1 text-xs text-amber-100">
+                      ±30 phút
+                    </span>
+                  </div>
+                  <p className="mt-3 text-sm text-slate-100">
+                    {fmt(new Date(suggestion.timeSlot.start), {
+                      weekday: 'short',
+                      day: '2-digit',
+                      month: '2-digit',
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}{' '}
+                    - {fmt(new Date(suggestion.timeSlot.end), { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      className="cursor-pointer rounded-full border border-white/15 px-3 py-2 text-xs font-semibold text-slate-100 transition hover:border-sky-300/30 hover:bg-white/5"
+                      onClick={() => void openRoom(suggestion.room)}
+                    >
+                      Xem phòng
+                    </button>
+                    <button
+                      className="cursor-pointer rounded-full bg-sky-500 px-3 py-2 text-xs font-semibold text-white transition hover:bg-sky-400"
+                      onClick={() => openComposer(suggestion.room, suggestionDraft(suggestion))}
+                    >
+                      Đặt khung giờ này
+                    </button>
+                  </div>
+                </article>
+              ))}
+          </div>
+        ) : null}
+
         {message.type === 'history_summary' && Array.isArray(message.data?.bookings) ? (
           <div className="mt-3 grid gap-3">
             {message.data?.bookings.map((booking) => (
